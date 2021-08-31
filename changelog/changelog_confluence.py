@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import subprocess
 import sys
@@ -46,14 +47,21 @@ def main():
     if not Path(".git").exists():
         print("this directory is not a working copy")
         return 1
-    command = "git-chglog"
-    chglog = subprocess.run([command], capture_output=True, text=True)
+    command = "git config --get remote.origin.url".split(' ')
+    git_url = subprocess.run(command, capture_output=True, text=True)
+    if git_url.returncode != 0:
+        print(f"git config command failed (exit code {git_url.returncode})")
+        print(f"{git_url.stderr}")
+        return 1
+    repo_name = os.path.splitext(os.path.basename(git_url.stdout.strip()))[0]
+    command = "git-chglog".split(' ')
+    chglog = subprocess.run(command, capture_output=True, text=True)
     if chglog.returncode != 0:
         print(f"git-chglog command failed (exit code {chglog.returncode})")
         print(f"{chglog.stderr}")
         return 1
     space = sys.argv[1]
-    module_path = sys.argv[2]
+    module_path = sys.argv[2] + "/" + repo_name
 
     # get page id for changelog
     changelog = ChangelogConfluence(space, module_path)
